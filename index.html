@@ -108,10 +108,15 @@ h1{font-family:var(--display);font-size:1.75rem;margin:0;letter-spacing:-.015em}
 .mhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .mhead b{font-size:.84rem;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
 .rows{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.erow{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;width:100%;cursor:pointer}
+.erow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;width:100%;cursor:pointer}
 .erow:first-child{border-top:0}
-.edot{width:10px;height:10px;border-radius:3px}
+.eic{color:var(--c);display:flex;flex:none}
+.ic{width:22px;height:22px;display:block}
+.chip .ic{width:16px;height:16px}
+.chip[aria-pressed="true"] .eic{color:inherit}
 .et{font-weight:600;overflow-wrap:anywhere}
+.ftag{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;font-size:.72rem;font-weight:600;vertical-align:1px;white-space:nowrap;background:var(--tint);color:var(--muted)}
+.ftag.full{background:var(--okbg);color:var(--ok)}
 .em{color:var(--muted);font-size:.8rem;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .er{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:1px;font-variant-numeric:tabular-nums}
 .er b{font-weight:600;white-space:nowrap}
@@ -305,9 +310,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <label><span id="e-unit-t">Kč/l</span><input id="e-unit" inputmode="decimal"></label>
         <label>Celkem Kč<input id="e-total" inputmode="decimal"></label>
       </div>
-      <label class="check"><input type="checkbox" id="e-full" checked><span id="e-full-t">Plná nádrž</span></label>
+      <label class="check"><input type="checkbox" id="e-full"><span id="e-full-t">Plná nádrž</span></label>
       <label class="check"><input type="checkbox" id="e-missed"><span>Předchozí tankování jsem nezapsal</span></label>
-      <label>Pumpa<input id="e-station" maxlength="60" list="e-stations" placeholder="nepovinné"></label>
+      <label>Pumpa<input id="e-station" maxlength="60" list="e-stations" placeholder="např. Tesco Jihlava"></label>
       <datalist id="e-stations"></datalist>
     </div>
     <div id="e-cost" style="display:flex;flex-direction:column;gap:12px" hidden>
@@ -322,7 +327,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
     <div class="btns">
       <button type="button" class="btn del" id="e-del" hidden>Smazat</button>
       <button type="button" class="btn" id="e-cancel">Zrušit</button>
-      <button type="submit" class="btn pri">Uložit</button>
+      <button type="submit" class="btn pri" id="e-save">Uložit</button>
     </div>
   </form>
 </div>
@@ -469,6 +474,8 @@ const CATS=[["servis","Servis a opravy","servis"],["pneu","Pneumatiky","servis"]
 const groupOf=c=>(CATS.find(x=>x[0]===c)||[0,0,"ost"])[2];
 const catName=c=>c==="fuel"?"Palivo":(CATS.find(x=>x[0]===c)||[0,"Ostatní"])[1];
 const groupCol=g=>(GROUPS.find(x=>x[0]===g)||GROUPS[4])[2];
+const HOME_STATION="Tesco Jihlava";
+const KM_MIN=500,KM_MAX=1000;
 const MONTHS=["leden","únor","březen","duben","květen","červen","červenec","srpen","září","říjen","listopad","prosinec"];
 const MSHORT=["led","úno","bře","dub","kvě","čvn","čvc","srp","zář","říj","lis","pro"];
 
@@ -492,6 +499,16 @@ function armed(btn,label,ask){if(btn.dataset.arm){delete btn.dataset.arm;btn.cla
 const CAR=`<svg viewBox="0 0 200 80" fill="none" aria-hidden="true"><path d="M8 58V46c0-4 3-6 7-7l26-5 20-16c3-2 6-3 10-3h54c4 0 7 1 10 4l19 18 28 5c6 1 10 4 10 10v7h-14M46 58h-14M152 58H68" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M52 34l14-11c2-1 4-2 7-2h22v13zM103 21h25c3 0 5 1 7 3l11 10h-43z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="50" cy="60" r="14" stroke="currentColor" stroke-width="3"/><circle cx="50" cy="60" r="5" fill="currentColor"/><circle cx="162" cy="60" r="14" stroke="currentColor" stroke-width="3"/><circle cx="162" cy="60" r="5" fill="currentColor"/></svg>`;
 const MOTO=`<svg viewBox="0 0 200 100" fill="none" aria-hidden="true"><circle cx="42" cy="70" r="24" stroke="currentColor" stroke-width="3"/><circle cx="42" cy="70" r="5" fill="currentColor"/><circle cx="158" cy="70" r="24" stroke="currentColor" stroke-width="3"/><circle cx="158" cy="70" r="5" fill="currentColor"/><path d="M42 70l34-32h44l22-6M158 70l-22-52h-14M78 38l14 32h24l14-26M92 70l-50 0" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M72 38c2-10 12-13 26-12 12 1 22 5 26 12z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M38 40h36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>`;
 const shape=v=>v.type==="moto"?MOTO:CAR;
+/* one solid icon per cost group, shared by the filter chips and the log */
+const ICON={
+  all:`<rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/>`,
+  fuel:`<path d="M9.2 6.5h8.1a3.4 3.4 0 0 1 3.4 3.4v9.6a1.6 1.6 0 0 1-3.2 0v-7.6h-5.3L9.2 11z"/><path d="M1.9 14.4l7-4.6 1.1 2.7-6.6 4.3a1.2 1.2 0 0 1-1.6-.4 1.3 1.3 0 0 1 .1-2z"/><path d="M12.6 12.9v2.9a2.2 2.2 0 0 0 2.2 2.2h2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`,
+  servis:`<path d="M15.6 2.9a5.6 5.6 0 0 0-6.9 7.3l-5.9 5.9a2.5 2.5 0 0 0 3.5 3.5l5.9-5.9a5.6 5.6 0 0 0 7.3-6.9l-3.4 3.4-3.2-.9-.9-3.2z"/>`,
+  poj:`<path d="M12 2.2l8.2 3v6.3c0 5-3.4 8.8-8.2 10.3-4.8-1.5-8.2-5.3-8.2-10.3V5.2z"/>`,
+  prov:`<path fill-rule="evenodd" d="M6.2 3h11.6A3.2 3.2 0 0 1 21 6.2v11.6a3.2 3.2 0 0 1-3.2 3.2H6.2A3.2 3.2 0 0 1 3 17.800V6.200A3.200 3.200 0 0 1 6.200 3zM9 7v10h2.500v-3.300h2.100a3.350 3.350 0 0 0 0-6.700zm2.500 2.200h1.900a1.150 1.150 0 0 1 0 2.300h-1.900z"/>`,
+  ost:`<circle cx="4.800" cy="12" r="2.400"/><circle cx="12" cy="12" r="2.400"/><circle cx="19.200" cy="12" r="2.400"/>`
+};
+const ic=k=>`<svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICON[k]}</svg>`;
 
 /* ---------- state ---------- */
 let vehicles=[],entries=[],photos={},meta={lastBackup:null},sample=false;
@@ -624,9 +641,9 @@ function renderLog(ctx){
   const ids=new Set(selection().map(v=>v.id)),q=$("q").value.trim().toLowerCase();
   const segById={};ctx.forEach(c=>c.segs.forEach(s=>segById[s.id]=s));
   const many=selection().length>1;
-  const kinds=[["all","Vše"],["fuel","Tankování"],...GROUPS.slice(1).map(g=>[g[0],g[1]])];
-  $("kindF").innerHTML=kinds.map(([k,l])=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${kindF===k}">${l}</button>`).join("");
-  const hay=e=>[e.station,e.what,e.note,e.kind==="cost"?catName(e.cat):"tankování",vById(e.vid)?.name].join(" ").toLowerCase();
+  const kinds=[["all","Vše","var(--muted)"],["fuel","Tankování",groupCol("fuel")],...GROUPS.slice(1).map(g=>[g[0],g[1],g[2]])];
+  $("kindF").innerHTML=kinds.map(([k,l,c])=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${kindF===k}"><span class="eic" style="--c:${c}">${ic(k)}</span>${l}</button>`).join("");
+  const hay=e=>[e.station,e.what,e.note,e.kind==="cost"?catName(e.cat):`tankování ${e.full?"plná":"dotankování"}`,vById(e.vid)?.name].join(" ").toLowerCase();
   const list=entries.filter(e=>ids.has(e.vid)&&(kindF==="all"||(kindF==="fuel"?e.kind==="fuel":e.kind==="cost"&&groupOf(e.cat)===kindF))&&(!q||hay(e).includes(q)))
     .sort((a,b)=>b.date.localeCompare(a.date)||(b.km-a.km));
   if(!list.length){$("log").innerHTML=`<div class="empty">${entries.length?"Tomu nic neodpovídá.":"Zatím žádné záznamy. Zapiš první tankování tlačítkem dole."}</div>`;return}
@@ -637,10 +654,11 @@ function renderLog(ctx){
     const [y,mo]=m.k.split("-");
     return `<section class="month"><div class="mhead"><h3 class="h3">${MONTHS[+mo-1]} ${y}</h3><b>${kc0(sumM[m.k])}</b></div><div class="rows">${m.rows.map(e=>{
       const v=vById(e.vid),s=segById[e.id];
-      const col=e.kind==="fuel"?groupCol("fuel"):groupCol(groupOf(e.cat));
-      const title=e.kind==="fuel"?`Tankování ${fN(e.qty,e.qty%1?2:0)} ${unitOf(v)}${e.full?"":" (doplnění)"}`:(e.what||catName(e.cat));
+      const group=e.kind==="fuel"?"fuel":groupOf(e.cat),col=groupCol(group);
+      const title=e.kind==="fuel"?`Tankování ${fN(e.qty,e.qty%1?2:0)} ${unitOf(v)}`:(e.what||catName(e.cat));
+      const tag=e.kind==="fuel"?`<span class="ftag${e.full?" full":""}">${e.full?"Plná":"Dotankování"}</span>`:"";
       const bits=[fmtD(e.date)];if(many)bits.push(esc(v.name));if(e.km)bits.push(fN(e.km)+" km");if(e.kind==="fuel"&&e.station)bits.push(esc(e.station));if(e.kind==="cost"&&e.what)bits.push(catName(e.cat));
-      return `<button type="button" class="erow" data-e="${esc(e.id)}"><span class="edot" style="background:${col}"></span><span style="min-width:0"><span class="et" style="display:block">${esc(title)}</span><span class="em" style="display:block">${bits.join(" · ")}</span></span><span class="er"><b>${kc0(e.kind==="fuel"?e.total:e.amount)}</b>${s?`<small>${fN(s.val,1)} ${per100(unitOf(v))}</small>`:e.kind==="fuel"&&e.qty?`<small>${fN(e.total/e.qty,2)} Kč/${unitOf(v)}</small>`:""}</span></button>`}).join("")}</div></section>`}).join("")
+      return `<button type="button" class="erow" data-e="${esc(e.id)}"><span class="eic" style="--c:${col}">${ic(group)}</span><span style="min-width:0"><span class="et" style="display:block">${esc(title)}${tag}</span><span class="em" style="display:block">${bits.join(" · ")}</span></span><span class="er"><b>${kc0(e.kind==="fuel"?e.total:e.amount)}</b>${s?`<small>${fN(s.val,1)} ${per100(unitOf(v))}</small>`:e.kind==="fuel"&&e.qty?`<small>${fN(e.total/e.qty,2)} Kč/${unitOf(v)}</small>`:""}</span></button>`}).join("")}</div></section>`}).join("")
     +(list.length>logLimit?`<button type="button" class="btn" id="more">Zobrazit další (${list.length-logLimit})</button>`:"");
 }
 $("q").addEventListener("input",()=>{logLimit=120;render()});
@@ -847,6 +865,8 @@ function labels(){
   const v=vById($("e-veh").value);if(!v)return;const u=unitOf(v),el=v.fuel==="elektro";
   $("e-qty-t").textContent=u==="l"?"Litrů":u;$("e-unit-t").textContent=`Kč/${u}`;$("e-full-t").textContent=el?"Nabito na plno":"Plná nádrž";
   $("e-km-t").textContent=eKind==="fuel"?"Stav km":"Stav km (nepovinné)";
+  /* new fill-ups start with the usual station; charging an electric car does not */
+  if(!editE){const s=$("e-station");if(!s.value||s.value===HOME_STATION)s.value=v.fuel==="elektro"?"":HOME_STATION}
   const es=entries.filter(e=>e.vid===v.id&&e.km>0&&e.id!==editE);
   const top=es.length?Math.max(...es.map(e=>e.km)):(v.startKm||"");
   $("e-km").placeholder=top!==""?`naposledy ${fN(top)}`:"např. 84 500";
@@ -855,6 +875,10 @@ function labels(){
 }
 $("e-kind").addEventListener("click",e=>{const b=e.target.closest("[data-k]");if(b)setKind(b.dataset.k)});
 $("e-veh").onchange=labels;
+$("e-station").addEventListener("focus",e=>e.target.select());
+/* a message about a field the user is fixing must not stay on screen */
+$("eform").addEventListener("input",()=>{$("e-msg").hidden=true;$("e-save").textContent="Uložit"});
+$("vform").addEventListener("input",()=>{$("v-msg").hidden=true});
 /* any two of quantity, unit price and total give the third */
 ["e-qty","e-unit","e-total"].forEach(id=>$(id).addEventListener("input",()=>{
   touched=[id,...touched.filter(x=>x!==id)].slice(0,2);typed.add(id);if(touched.length<2)return;
@@ -871,7 +895,7 @@ function openEntry(id,vid){
   const e=id?entries.find(x=>x.id===id):null;
   if(!e&&!activeV().length){toast("Není žádné vozidlo v provozu.");return}
   if(sample&&e){toast("Ukázkové záznamy nejde upravit.");return}
-  editE=e?e.id:null;kmWarned=null;touched=[];typed.clear();
+  editE=e?e.id:null;kmWarned=null;touched=[];typed.clear();$("e-save").textContent="Uložit";
   const pre=e?e.vid:vid||(vById(vsel)&&!vById(vsel).retired?vsel:activeV()[0].id);
   const opts=vehicles.filter(v=>!v.retired||v.id===pre);
   $("e-veh").innerHTML=opts.map(v=>`<option value="${esc(v.id)}">${esc(v.name)}${v.plate?" · "+esc(v.plate):""}</option>`).join("");
@@ -881,10 +905,10 @@ function openEntry(id,vid){
   $("e-kind").hidden=!!e;
   $("e-date").value=e?e.date:todayIso;$("e-km").value=e&&e.km?e.km:"";
   $("e-qty").value=e&&e.kind==="fuel"?fN(e.qty,2):"";$("e-unit").value=e&&e.kind==="fuel"&&e.qty?fN(e.total/e.qty,2):"";$("e-total").value=e&&e.kind==="fuel"?fN(e.total,2):"";
-  $("e-full").checked=e&&e.kind==="fuel"?e.full:true;$("e-missed").checked=e&&e.kind==="fuel"?e.missed:false;$("e-station").value=e&&e.kind==="fuel"?e.station:"";
+  $("e-full").checked=e&&e.kind==="fuel"?e.full:false;$("e-missed").checked=e&&e.kind==="fuel"?e.missed:false;$("e-station").value=e&&e.kind==="fuel"?e.station:"";
   $("e-cat").value=e&&e.kind==="cost"?e.cat:"servis";$("e-amount").value=e&&e.kind==="cost"?e.amount:"";$("e-what").value=e&&e.kind==="cost"?e.what:"";
   $("e-note").value=e?e.note:"";$("e-del").hidden=!e;$("e-msg").hidden=true;
-  $("e-stations").innerHTML=[...new Set(entries.filter(x=>x.kind==="fuel"&&x.station).map(x=>x.station))].slice(0,30).map(s=>`<option value="${esc(s)}">`).join("");
+  $("e-stations").innerHTML=[...new Set([HOME_STATION,...entries.filter(x=>x.kind==="fuel"&&x.station).map(x=>x.station)])].slice(0,30).map(s=>`<option value="${esc(s)}">`).join("");
   labels();$("esheet").hidden=false;lock(true);$("esheet").querySelector(".panel").scrollTop=0;
 }
 $("e-cancel").onclick=closeTop;
@@ -902,6 +926,7 @@ $("eform").onsubmit=async ev=>{
     if(!q||Number.isNaN(q))return eErr("Doplň natankované množství.");
     const total=t&&!Number.isNaN(t)?t:(u&&!Number.isNaN(u)?+(q*u).toFixed(2):null);
     if(!total)return eErr("Doplň cenu celkem nebo cenu za jednotku.");
+    if(!$("e-station").value.trim())return eErr("Doplň pumpu.");
     rec={kind:"fuel",vid,date,km,qty:q,total,full:$("e-full").checked,missed:$("e-missed").checked,station:$("e-station").value.trim(),note:$("e-note").value.trim()};
   }else{
     const a=num($("e-amount").value);if(!a||Number.isNaN(a))return eErr("Doplň částku.");
@@ -912,7 +937,14 @@ $("eform").onsubmit=async ev=>{
     const same=entries.filter(e=>e.vid===vid&&e.km>0&&e.id!==editE);
     const before=same.filter(e=>e.date<=date).reduce((m,e)=>Math.max(m,e.km),+vById(vid).startKm||0),after=same.filter(e=>e.date>date).reduce((m,e)=>Math.min(m,e.km),Infinity);
     const key=`${vid}|${date}|${rec.km}`;
-    if((rec.km<before||rec.km>after)&&kmWarned!==key){kmWarned=key;return eErr(`Stav km nesedí na okolní záznamy (${rec.km<before?`dřív ${fN(before)} km`:`později ${fN(after)} km`}). Když je správně, klepni znovu na Uložit.`,true)}
+    const ask=t=>{kmWarned=key;eErr(`${t} Je to správně?`,true);$("e-save").textContent="Ano, je to správně"};
+    if((rec.km<before||rec.km>after)&&kmWarned!==key)return ask(`Stav km nesedí na okolní záznamy (${rec.km<before?`dřív ${fN(before)} km`:`později ${fN(after)} km`}).`);
+    /* a jump from the previous fill-up outside the usual range is probably a typo; an edit that keeps the km is not rechecked */
+    const old=editE&&entries.find(e=>e.id===editE);
+    if(rec.kind==="fuel"&&(!old||old.km!==rec.km)&&kmWarned!==key){
+      const prev=same.filter(e=>e.kind==="fuel"&&e.date<=date).reduce((m,e)=>Math.max(m,e.km),0),gap=rec.km-prev;
+      if(prev&&(gap<KM_MIN||gap>KM_MAX))return ask(`Od posledního tankování je to ${gap<KM_MIN?"jen ":""}${fN(gap)} km (${fN(prev)} km → ${fN(rec.km)} km).`);
+    }
   }
   if(editE){const i=entries.findIndex(e=>e.id===editE);entries[i]={id:editE,...rec}}else entries.push({id:uid(),...rec});
   if(await persist()){
