@@ -24,7 +24,7 @@
   --ok:#2e7d4f; --warn:#9a5c00; --bad:#b3261e; --okbg:#e6f2ea; --warnbg:#fbf0dc; --badbg:#f8e3e1; --infobg:#dcefeb;
   --scrim:rgba(10,20,20,.5);
   --odo-bg:#10181a; --odo-fg:#f1f5f3; --odo-line:#2f3a3d;
-  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#6250d6;
   --display:"Bricolage Grotesque",system-ui,-apple-system,sans-serif; --body:"Figtree",system-ui,-apple-system,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -32,13 +32,13 @@
   --accent:#5fd6c0; --accent-fg:#0b1513;
   --ok:#7fd3a0; --warn:#f0b35a; --bad:#f2938c; --okbg:#1f3328; --warnbg:#3a2e17; --badbg:#3d2120; --infobg:#1b3531; --scrim:rgba(0,0,0,.6);
   --odo-bg:#0a0f10; --odo-fg:#f1f5f3; --odo-line:#2f3a3d;
-  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; color-scheme:dark}}
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#9085e9; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#111719; --card:#1a2124; --fg:#e6ecec; --muted:#95a5a8; --line:#2c3639; --tint:#232c2f;
   --accent:#5fd6c0; --accent-fg:#0b1513;
   --ok:#7fd3a0; --warn:#f0b35a; --bad:#f2938c; --okbg:#1f3328; --warnbg:#3a2e17; --badbg:#3d2120; --infobg:#1b3531; --scrim:rgba(0,0,0,.6);
   --odo-bg:#0a0f10; --odo-fg:#f1f5f3; --odo-line:#2f3a3d;
-  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; color-scheme:dark}
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#9085e9; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -146,6 +146,7 @@ h1{font-family:var(--display);font-size:1.75rem;margin:0;letter-spacing:-.015em}
 .tile b{font-family:var(--display);font-size:1.34rem;line-height:1.15;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .tile span{font-size:.74rem;color:var(--muted);font-weight:500}
 .tile i{font-style:normal;font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.tiles.eight{grid-template-columns:repeat(4,minmax(0,1fr))}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .card h3{margin:0;font-family:var(--display);font-size:1.08rem}
 .chart{position:relative;width:100%;min-width:0}
@@ -207,6 +208,7 @@ textarea{resize:vertical}
 .preview{position:relative;border-radius:10px;overflow:hidden;background:var(--tint);aspect-ratio:16/9;max-width:100%}
 .preview img{width:100%;height:100%;object-fit:cover;display:block}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:640px){.tiles.eight{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:440px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (prefers-reduced-motion:no-preference){.vcard,.tile{transition:border-color .15s}}
 </style>
@@ -277,6 +279,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       <button type="button" class="btn grow" id="v-retire">Vyřadit z provozu</button>
       <button type="button" class="btn grow" id="v-revive" hidden>Vrátit do provozu</button>
       <button type="button" class="btn del" id="v-del" hidden>Smazat</button>
+      <button type="button" class="btn grow" id="v-link" hidden>Nabíjení ze Sledování elektřiny</button>
     </div>
     <div class="btns">
       <button type="button" class="btn" id="v-cancel">Zrušit</button>
@@ -345,6 +348,32 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   </form>
 </div>
 
+<!-- charging link -->
+<div class="sheet top" id="lsheet" hidden>
+  <form class="panel" id="lform" autocomplete="off" novalidate>
+    <h2>Nabíjení ze Sledování elektřiny</h2>
+    <p>Automobil si nabíjení čte přes tvůj účet ve Firebase. Jen čte, v aplikaci na elektřinu nic nemění. Heslo se neukládá.</p>
+    <div id="l-off" style="display:flex;flex-direction:column;gap:12px">
+      <p>Adresu a klíč najdeš ve Sledování elektřiny v části Záloha → Cloud synchronizace. Přihlas se stejným účtem.</p>
+      <label>Firebase Database URL<input id="l-url" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://projekt-default-rtdb.europe-west1.firebasedatabase.app"></label>
+      <label>Firebase Web API klíč<input id="l-key" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="AIza…"></label>
+      <label>E-mail<input id="l-email" type="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username"></label>
+      <label>Heslo<input id="l-pass" type="password" autocomplete="current-password"></label>
+    </div>
+    <div class="row">
+      <label>Nabíjí se vozidlo<select id="l-veh"></select></label>
+      <label>Počítat od<input id="l-from" type="date"></label>
+    </div>
+    <p class="note i" id="l-info" hidden></p>
+    <p class="msg" id="l-msg" hidden></p>
+    <div class="btns">
+      <button type="button" class="btn del" id="l-out" hidden>Odpojit</button>
+      <button type="button" class="btn" id="l-close">Zavřít</button>
+      <button type="submit" class="btn pri" id="l-go">Přihlásit a načíst</button>
+    </div>
+  </form>
+</div>
+
 <!-- attachment viewer -->
 <div class="sheet top" id="fsheet" hidden>
   <div class="panel">
@@ -378,6 +407,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <button class="btn" id="b-read" type="button">Načíst text</button>
       </div>
     </details>
+    <h4>Nabíjení auta</h4>
+    <button class="btn" id="b-link" type="button">Nabíjení ze Sledování elektřiny</button>
     <h4>Export</h4>
     <button class="btn" id="b-csv" type="button">Záznamy do Excelu</button>
     <button class="btn" id="b-close" type="button">Zavřít</button>
@@ -428,15 +459,19 @@ function odoAt(pts,s){
   const a=pts[lo],b=pts[hi];return b.s===a.s?b.km:a.km+(b.km-a.km)*(s-a.s)/(b.s-a.s);
 }
 const kmBetween=(pts,a,b)=>Math.max(0,odoAt(pts,serial(b))-odoAt(pts,serial(a)-1));
-function makeCtx(vehicles,entries){
+function makeCtx(vehicles,entries,charges=[]){
   return vehicles.map(v=>{
     const es=entries.filter(e=>e.vid===v.id);
-    return {v,es,pts:odoPoints(v,es),segs:consumption(es.filter(e=>e.kind==="fuel"))};
+    return {v,es,ch:charges.filter(x=>x.vid===v.id),pts:odoPoints(v,es),segs:consumption(es.filter(e=>e.kind==="fuel"))};
   });
 }
+/* the electricity app's charge log: { date:"YYYY-MM-DD HH:MM", kwh, price, _deleted? } */
+const cleanCharges=a=>(Array.isArray(a)?a:a&&typeof a==="object"?Object.values(a):[])
+  .filter(x=>x&&!x._deleted&&typeof x.date==="string"&&isDate(x.date.slice(0,10))&&+x.kwh>0&&+x.kwh<=1000)
+  .map(x=>({date:x.date.slice(0,10),kwh:+x.kwh,price:Math.max(0,+x.price||0)}));
 /* everything the app reports for a set of vehicles between two days, inclusive */
 function periodStats(ctx,a,b,groupOf){
-  const out={cost:0,fuelCost:0,groups:{},cats:{},km:0,dist:0,qty:0,count:0,mixed:false,unit:null,fuelQty:0};
+  const out={cost:0,fuelCost:0,groups:{},cats:{},km:0,dist:0,qty:0,count:0,mixed:false,unit:null,fuelQty:0,kwh:0,chargeCost:0,chargeCount:0,kwhRange:0,kmCharge:0};
   for(const c of ctx){
     for(const e of c.es){
       if(e.date<a||e.date>b)continue;
@@ -445,17 +480,32 @@ function periodStats(ctx,a,b,groupOf){
       if(e.kind==="fuel"){out.fuelCost+=amt;out.fuelQty+=e.qty}
     }
     out.km+=kmBetween(c.pts,a,b);
+    /* kWh/100 km uses only days the odometer covers and the km inside the charging period */
+    if(c.ch.length&&c.pts.length){
+      const lo=c.pts[0].s,hi=c.pts[c.pts.length-1].s;let inRange=0;
+      for(const x of c.ch)if(x.date>=a&&x.date<=b&&serial(x.date)>=lo&&serial(x.date)<=hi)inRange+=x.kwh;
+      if(inRange){
+        const days=c.ch.map(x=>x.date).sort(),from=days[0]>a?days[0]:a,to=days[days.length-1]<b?days[days.length-1]:b;
+        out.kwhRange+=inRange;out.kmCharge+=kmBetween(c.pts,from,to);
+      }
+    }
+    for(const x of c.ch){
+      if(x.date<a||x.date>b)continue;
+      out.cost+=x.total;out.chargeCost+=x.total;out.kwh+=x.kwh;out.chargeCount++;
+      out.groups.charge=(out.groups.charge||0)+x.total;out.cats.charge=(out.cats.charge||0)+x.total;
+    }
     const unit=c.v.unit;let used=false;
     for(const s of c.segs)if(s.date>=a&&s.date<=b){out.dist+=s.dist;out.qty+=s.qty;used=true}
     if(used){if(out.unit&&out.unit!==unit)out.mixed=true;out.unit=unit}
   }
   out.perKm=out.km>0?out.cost/out.km:null;
   out.cons=out.dist>0&&!out.mixed?out.qty/out.dist*100:null;
+  out.kwhPer100=out.kmCharge>0?out.kwhRange/out.kmCharge*100:null;
   return out;
 }
 /* calendar months a selection was really in use inside [a,b], for a fair monthly average */
 function monthsUsed(ctx,a,b,today){
-  const dates=ctx.flatMap(c=>c.es.map(e=>e.date));if(!dates.length)return 0;
+  const dates=ctx.flatMap(c=>[...c.es,...c.ch].map(e=>e.date));if(!dates.length)return 0;
   const first=dates.reduce((x,y)=>x<y?x:y);
   const allOut=ctx.length&&ctx.every(c=>c.v.retired);
   let end=b<today?b:today;
@@ -498,10 +548,12 @@ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}ca
 
 /* ---------- catalogues ---------- */
 const FUELS={benzin:{n:"Benzín",u:"l"},nafta:{n:"Nafta",u:"l"},hybrid:{n:"Hybrid",u:"l"},lpg:{n:"LPG",u:"l"},cng:{n:"CNG",u:"kg"},elektro:{n:"Elektřina",u:"kWh"}};
-const GROUPS=[["fuel","Palivo","var(--s1)"],["servis","Servis a údržba","var(--s2)"],["poj","Pojištění a poplatky","var(--s3)"],["prov","Parkování a péče","var(--s4)"],["ost","Ostatní","var(--s5)"]];
+const GROUPS=[["fuel","Palivo","var(--s1)"],["servis","Servis a údržba","var(--s2)"],["poj","Pojištění a poplatky","var(--s3)"],["prov","Parkování a péče","var(--s4)"],["ost","Ostatní","var(--s5)"],["charge","Nabíjení","var(--s6)"]];
 const CATS=[["servis","Servis a opravy","servis"],["pneu","Pneumatiky","servis"],["stk","STK a emise","servis"],["poj","Pojištění","poj"],["znamka","Dálniční známka a mýto","poj"],["dan","Daně a poplatky","poj"],["splatky","Leasing a splátky","poj"],["park","Parkování","prov"],["myti","Mytí a péče","prov"],["vybava","Příslušenství a výbava","ost"],["pokuta","Pokuty","ost"],["ost","Ostatní","ost"]];
 const groupOf=c=>(CATS.find(x=>x[0]===c)||[0,0,"ost"])[2];
-const catName=c=>c==="fuel"?"Palivo":(CATS.find(x=>x[0]===c)||[0,"Ostatní"])[1];
+const catName=c=>c==="fuel"?"Palivo":c==="charge"?"Nabíjení":(CATS.find(x=>x[0]===c)||[0,"Ostatní"])[1];
+const catGroup=c=>c==="fuel"||c==="charge"?c:groupOf(c);
+const amountOf=e=>e.kind==="cost"?e.amount:e.total;
 const groupCol=g=>(GROUPS.find(x=>x[0]===g)||GROUPS[4])[2];
 const HOME_STATION="Tesco Jihlava";
 const KM_MIN=500,KM_MAX=1000;
@@ -537,13 +589,14 @@ const ICON={
   servis:`<path d="M15.6 2.9a5.6 5.6 0 0 0-6.9 7.3l-5.9 5.9a2.5 2.5 0 0 0 3.5 3.5l5.9-5.9a5.6 5.6 0 0 0 7.3-6.9l-3.4 3.4-3.2-.9-.9-3.2z"/>`,
   poj:`<path d="M12 2.2l8.2 3v6.3c0 5-3.4 8.8-8.2 10.3-4.8-1.5-8.2-5.3-8.2-10.3V5.2z"/>`,
   prov:`<path fill-rule="evenodd" d="M6.2 3h11.6A3.2 3.2 0 0 1 21 6.2v11.6a3.2 3.2 0 0 1-3.2 3.2H6.2A3.2 3.2 0 0 1 3 17.800V6.200A3.200 3.200 0 0 1 6.200 3zM9 7v10h2.500v-3.300h2.100a3.350 3.350 0 0 0 0-6.700zm2.500 2.200h1.900a1.150 1.150 0 0 1 0 2.300h-1.900z"/>`,
+  charge:`<path d="M13.300 2 4.600 13.400h6.200L9.900 22l9-11.900h-6.400z"/>`,
   clip:`<path d="M20 11.500l-8 8a5 5 0 0 1-7-7l8.600-8.600a3.300 3.300 0 0 1 4.700 4.700l-8.600 8.600a1.700 1.700 0 0 1-2.400-2.400l7.900-7.900" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
   ost:`<circle cx="4.800" cy="12" r="2.400"/><circle cx="12" cy="12" r="2.400"/><circle cx="19.200" cy="12" r="2.400"/>`
 };
 const ic=k=>`<svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICON[k]}</svg>`;
 
 /* ---------- state ---------- */
-let vehicles=[],entries=[],photos={},meta={lastBackup:null},sample=false;
+let vehicles=[],entries=[],photos={},meta={lastBackup:null,chargesAt:0},sample=false,charges=[],chargeLink=null;
 let view="garage",vsel="all",kindF="all",period="m",year=+todayIso.slice(0,4),metric="cost",selBucket=null,logLimit=120;
 try{const v=localStorage.getItem("automobil-view");if(["garage","log","stats"].includes(v))view=v}catch(e){}
 const unitAttach=()=>vehicles.forEach(v=>v.unit=unitOf(v));
@@ -551,6 +604,14 @@ const vById=id=>vehicles.find(v=>v.id===id);
 const activeV=()=>vehicles.filter(v=>!v.retired);
 const retiredV=()=>vehicles.filter(v=>v.retired);
 function selection(){if(vsel==="all")return vehicles;if(vsel==="active")return activeV();const v=vById(vsel);return v?[v]:vehicles}
+/* charges read from the electricity app, limited to the linked vehicle and its period of use */
+function assigned(){
+  const v=chargeLink&&vById(chargeLink.vid);if(!v)return[];
+  const from=chargeLink.from||"",to=v.retired?v.retired.date:"9999-12-31";
+  return charges.filter(x=>x.date>=from&&x.date<=to).map(x=>({vid:v.id,date:x.date,kwh:x.kwh,price:x.price,total:x.kwh*x.price}));
+}
+const ctxFor=list=>makeCtx(list,entries,assigned());
+const cleanLink=l=>l&&typeof l.vid==="string"?{vid:l.vid,from:isDate(l.from)?l.from:""}:null;
 function sanitize(d){
   const fuels=Object.keys(FUELS);
   const vs=(Array.isArray(d.vehicles)?d.vehicles:[]).filter(v=>v&&v.id&&v.name).map(v=>({id:String(v.id),type:v.type==="moto"?"moto":"auto",name:String(v.name).slice(0,60),plate:String(v.plate||"").slice(0,12),year:Number.isInteger(+v.year)&&+v.year>0?+v.year:"",fuel:fuels.includes(v.fuel)?v.fuel:"benzin",startKm:v.startKm===""||v.startKm==null||isNaN(+v.startKm)?"":+v.startKm,since:isDate(v.since)?v.since:"",price:v.price===""||v.price==null||isNaN(+v.price)?"":+v.price,note:String(v.note||"").slice(0,500),retired:v.retired&&isDate(v.retired.date)?{date:v.retired.date,why:String(v.retired.why||"Jiné").slice(0,30),sold:v.retired.sold===""||v.retired.sold==null||isNaN(+v.retired.sold)?"":+v.retired.sold}:null}));
@@ -562,7 +623,7 @@ function sanitize(d){
 }
 async function persist(){
   if(sample)return true;
-  const ok=await Store.set(KEY,{vehicles:vehicles.map(({unit,...v})=>v),entries,meta});
+  const ok=await Store.set(KEY,{vehicles:vehicles.map(({unit,...v})=>v),entries,meta,charges,chargeLink});
   if(!ok)toast("Uložení se nepovedlo. Ulož si zálohu a zkontroluj místo v zařízení.");
   return ok;
 }
@@ -603,7 +664,7 @@ function buildSample(){
 /* ---------- shared render ---------- */
 function render(){
   unitAttach();
-  const yr=todayIso.slice(0,4),ctx=makeCtx(vehicles,entries);
+  const yr=todayIso.slice(0,4),ctx=ctxFor(vehicles);
   const sy=periodStats(ctx,`${yr}-01-01`,`${yr}-12-31`,groupOf),n=activeV().length;
   $("sub").textContent=!vehicles.length?"Přidej první vozidlo":`${n} ${pl(n,"vozidlo","vozidla","vozidel")} v provozu · letos ${kc0(sy.cost)}`;
   $("sampleNote").hidden=!sample;
@@ -646,6 +707,7 @@ function vehicleCard(c){
     <div class="vbody">
       <div class="vhead"><div><div class="vname">${esc(v.name)}</div><div class="vmeta">${meta}</div></div></div>
       ${odoHtml(km)}
+      ${s.kwh>0?`<div class="vmeta">Elektřina ${s.kwhPer100!=null?fN(s.kwhPer100,1)+" kWh/100 km · ":""}${fN(Math.round(s.kwh))} kWh · ${kc0(s.chargeCost)}</div>`:""}
       <div class="vstats">
         <div><b>${s.cons!=null?fN(s.cons,1):"–"}</b><span>${per100(unitOf(v))}</span></div>
         ${last.map(([l,x])=>`<div><b>${x}</b><span>${l}</span></div>`).join("")}
@@ -673,19 +735,25 @@ function renderLog(ctx){
   const ids=new Set(selection().map(v=>v.id)),q=$("q").value.trim().toLowerCase();
   const segById={};ctx.forEach(c=>c.segs.forEach(s=>segById[s.id]=s));
   const many=selection().length>1;
-  const kinds=[["all","Vše","var(--muted)"],["fuel","Tankování",groupCol("fuel")],...GROUPS.slice(1).map(g=>[g[0],g[1],g[2]])];
+  const ch=assigned().filter(x=>ids.has(x.vid));
+  if(kindF==="charge"&&!ch.length)kindF="all";
+  const kinds=[["all","Vše","var(--muted)"],["fuel","Tankování",groupCol("fuel")],...(ch.length?[["charge","Nabíjení",groupCol("charge")]]:[]),...GROUPS.slice(1,5).map(g=>[g[0],g[1],g[2]])];
+  /* charging happens daily, so the log shows one summary row per month */
+  const byM={};if(kindF==="all"||kindF==="charge")ch.forEach(x=>{const k=x.vid+x.date.slice(0,7),m=byM[k]||(byM[k]={kind:"chargeMonth",id:"m"+k,vid:x.vid,date:x.date,kwh:0,total:0,n:0,km:0});m.kwh+=x.kwh;m.total+=x.total;m.n++;if(x.date>m.date)m.date=x.date});
+  const chRows=Object.values(byM).filter(m=>!q||`nabíjení ${vById(m.vid).name}`.toLowerCase().includes(q));
   $("kindF").innerHTML=kinds.map(([k,l,c])=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${kindF===k}"><span class="eic" style="--c:${c}">${ic(k)}</span>${l}</button>`).join("");
   const hay=e=>[...(e.files||[]).map(f=>f.name),e.station,e.what,e.note,e.kind==="cost"?catName(e.cat):`tankování ${e.full?"plná":"dotankování"}`,vById(e.vid)?.name].join(" ").toLowerCase();
   const list=entries.filter(e=>ids.has(e.vid)&&(kindF==="all"||(kindF==="fuel"?e.kind==="fuel":e.kind==="cost"&&groupOf(e.cat)===kindF))&&(!q||hay(e).includes(q)))
-    .sort((a,b)=>b.date.localeCompare(a.date)||(b.km-a.km));
+    .concat(chRows).sort((a,b)=>b.date.localeCompare(a.date)||((b.km||0)-(a.km||0)));
   if(!list.length){$("log").innerHTML=`<div class="empty">${entries.length?"Tomu nic neodpovídá.":"Zatím žádné záznamy. Zapiš první tankování tlačítkem dole."}</div>`;return}
   const shown=list.slice(0,logLimit),months=[];
   shown.forEach(e=>{const k=e.date.slice(0,7);let m=months[months.length-1];if(!m||m.k!==k){m={k,rows:[]};months.push(m)}m.rows.push(e)});
-  const sumM={};list.forEach(e=>{const k=e.date.slice(0,7);sumM[k]=(sumM[k]||0)+(e.kind==="fuel"?e.total:e.amount)});
+  const sumM={};list.forEach(e=>{const k=e.date.slice(0,7);sumM[k]=(sumM[k]||0)+amountOf(e)});
   $("log").innerHTML=months.map(m=>{
     const [y,mo]=m.k.split("-");
     return `<section class="month"><div class="mhead"><h3 class="h3">${MONTHS[+mo-1]} ${y}</h3><b>${kc0(sumM[m.k])}</b></div><div class="rows">${m.rows.map(e=>{
       const v=vById(e.vid),s=segById[e.id];
+      if(e.kind==="chargeMonth")return `<button type="button" class="erow" data-c="1"><span class="eic" style="--c:${groupCol("charge")}">${ic("charge")}</span><span style="min-width:0"><span class="et" style="display:block">Nabíjení ${fN(e.kwh,1)} kWh</span><span class="em" style="display:block">${e.n} ${pl(e.n,"nabití","nabití","nabití")} v měsíci${many?` · ${esc(v.name)}`:""}</span></span><span class="er"><b>${kc0(e.total)}</b><small>${fN(e.total/e.kwh,2)} Kč/kWh</small></span></button>`;
       const group=e.kind==="fuel"?"fuel":groupOf(e.cat),col=groupCol(group);
       const title=e.kind==="fuel"?`Tankování ${fN(e.qty,e.qty%1?2:0)} ${unitOf(v)}`:(e.what||catName(e.cat));
       const nf=(e.files||[]).length,tag=e.kind==="fuel"?`<span class="ftag${e.full?" full":""}">${e.full?"Plná":"Dotankování"}</span>`:nf?`<span class="clip" aria-label="Přílohy: ${nf}">${ic("clip")}${nf>1?nf:""}</span>`:"";
@@ -695,10 +763,10 @@ function renderLog(ctx){
 }
 $("q").addEventListener("input",()=>{logLimit=120;render()});
 $("kindF").addEventListener("click",e=>{const b=e.target.closest("[data-k]");if(!b)return;kindF=b.dataset.k;logLimit=120;render()});
-$("log").addEventListener("click",e=>{if(e.target.id==="more"){logLimit+=200;render();return}const b=e.target.closest("[data-e]");if(b)openEntry(b.dataset.e)});
+$("log").addEventListener("click",e=>{if(e.target.id==="more"){logLimit+=200;render();return}if(e.target.closest("[data-c]")){toast("Nabíjení upravuješ ve Sledování elektřiny.");return}const b=e.target.closest("[data-e]");if(b)openEntry(b.dataset.e)});
 
 /* ---------- overview ---------- */
-function yearsWithData(c){const ys=new Set(c.flatMap(x=>x.es.map(e=>+e.date.slice(0,4))));return [...ys].sort((a,b)=>a-b)}
+function yearsWithData(c){const ys=new Set(c.flatMap(x=>[...x.es,...x.ch].map(e=>+e.date.slice(0,4))));return [...ys].sort((a,b)=>a-b)}
 function bucketsFor(c){
   const ys=yearsWithData(c);
   if(period==="y"){
@@ -709,8 +777,8 @@ function bucketsFor(c){
   return MSHORT.map((m,i)=>({k:`${year}-${String(i+1).padStart(2,"0")}`,a:`${year}-${String(i+1).padStart(2,"0")}-01`,b:lastOfMonth(year,i+1),lab:m,long:`${MONTHS[i]} ${year}`}));
 }
 function renderStats(){
-  const el=$("statsView"),sel=selection(),c=makeCtx(sel,entries);
-  if(!c.some(x=>x.es.length)){el.innerHTML=`<div class="empty">Přehled se ukáže po prvních záznamech. Zapiš tankování nebo náklad.</div>`;return}
+  const el=$("statsView"),sel=selection(),c=ctxFor(sel);
+  if(!c.some(x=>x.es.length||x.ch.length)){el.innerHTML=`<div class="empty">Přehled se ukáže po prvních záznamech. Zapiš tankování nebo náklad.</div>`;return}
   const ys=yearsWithData(c);
   if(period==="m"&&!ys.includes(year))year=ys.includes(+todayIso.slice(0,4))?+todayIso.slice(0,4):ys[ys.length-1];
   const a=period==="m"?`${year}-01-01`:"0000-01-01",b=period==="m"?`${year}-12-31`:"9999-12-31";
@@ -718,24 +786,28 @@ function renderStats(){
   const single=sel.length===1?sel[0]:null,unit=s.unit||(single?unitOf(single):"l");
   const canCons=!!single;
   if(metric==="cons"&&!canCons)metric="cost";
+  if(metric==="kwh"&&!s.kwh)metric="cost";
   const idx=ys.indexOf(year);
   let html=`<div class="pctl"><div class="seg2"><button type="button" data-p="m" aria-pressed="${period==="m"}">Po měsících</button><button type="button" data-p="y" aria-pressed="${period==="y"}">Po letech</button></div>
     ${period==="m"?`<div class="yearnav"><button type="button" id="y-prev" aria-label="Předchozí rok" ${idx<=0?"disabled":""}>‹</button><b>${year}</b><button type="button" id="y-next" aria-label="Další rok" ${idx>=ys.length-1?"disabled":""}>›</button></div>`:""}</div>`;
   const tiles=[
     ["Náklady celkem",kc0(s.cost),`${s.count} ${pl(s.count,"záznam","záznamy","záznamů")}`],
     ["Průměr za měsíc",mo?kc0(s.cost/mo):"–",mo?`za ${mo} ${pl(mo,"měsíc","měsíce","měsíců")}`:""],
-    ["Náklady na km",s.perKm!=null?fN(s.perKm,2)+" Kč":"–","vše včetně paliva"],
+    ["Náklady na km",s.perKm!=null?fN(s.perKm,2)+" Kč":"–",s.kwh>0?"včetně paliva a nabíjení":"vše včetně paliva"],
     ["Spotřeba",s.cons!=null?fN(s.cons,1):"–",s.cons!=null?per100(unit):s.mixed?"různá paliva, vyber vozidlo":"chybí dvě plné nádrže"],
     ["Najeto",fN(Math.round(s.km))+" km",mo&&s.km?`${fN(Math.round(s.km/mo))} km za měsíc`:""],
     ["Palivo",kc0(s.fuelCost),s.cost?`${fN(s.fuelCost/s.cost*100)} % nákladů`:""]
   ];
-  html+=`<div class="tiles">${tiles.map(([l,v,n])=>`<div class="tile"><span>${l}</span><b>${v}</b><i>${esc(n)}</i></div>`).join("")}</div>`;
-  const ms=[["cost","Náklady"],...(canCons?[["cons","Spotřeba"]]:[]),["km","Kilometry"],["perkm","Kč/km"]];
+  if(s.kwh>0)tiles.push(
+    ["Elektřina",s.kwhPer100!=null?fN(s.kwhPer100,1):"–",s.kwhPer100!=null?"kWh/100 km":"chybí stav km za toto období"],
+    ["Nabíjení",kc0(s.chargeCost),`${fN(Math.round(s.kwh))} kWh · ${s.cost?fN(s.chargeCost/s.cost*100):0} % nákladů`]);
+  html+=`<div class="tiles${s.kwh>0?" eight":""}">${tiles.map(([l,v,n])=>`<div class="tile"><span>${l}</span><b>${v}</b><i>${esc(n)}</i></div>`).join("")}</div>`;
+  const ms=[["cost","Náklady"],...(canCons?[["cons","Spotřeba"]]:[]),...(s.kwh>0?[["kwh","Elektřina"]]:[]),["km","Kilometry"],["perkm","Kč/km"]];
   html+=`<section class="card"><div class="chips wrapped" id="mpick">${ms.map(([k,l])=>`<button type="button" class="chip" data-m="${k}" aria-pressed="${metric===k}">${l}</button>`).join("")}</div>
     <div class="chart" id="chart"></div><div class="legend" id="legend"></div><div class="readout" id="readout" aria-live="polite"></div>
     <details><summary>Zobrazit jako tabulku</summary><div class="tblwrap" id="table"></div></details></section>`;
   const cats=Object.entries(s.cats).sort((x,y)=>y[1]-x[1]);
-  if(cats.length)html+=`<section class="card"><h3>Kam jdou peníze</h3><div class="hbars">${cats.map(([k,v])=>`<div class="hb"><span>${catName(k)}</span><span class="k">${kc0(v)}</span><div class="t"><i style="width:${v/cats[0][1]*100}%;background:${groupCol(k==="fuel"?"fuel":groupOf(k))}"></i></div></div>`).join("")}</div></section>`;
+  if(cats.length)html+=`<section class="card"><h3>Kam jdou peníze</h3><div class="hbars">${cats.map(([k,v])=>`<div class="hb"><span>${catName(k)}</span><span class="k">${kc0(v)}</span><div class="t"><i style="width:${v/cats[0][1]*100}%;background:${groupCol(catGroup(k))}"></i></div></div>`).join("")}</div></section>`;
   if(sel.length>1){
     const rows=c.map(x=>{const t=periodStats([x],a,b,groupOf),m=monthsUsed([x],a,b,todayIso);return {v:x.v,t,m}}).filter(r=>r.t.count);
     html+=`<section class="card"><h3>Porovnání vozidel</h3><div class="tblwrap"><table><thead><tr><th scope="col">Vozidlo</th><th scope="col">Najeto</th><th scope="col">Spotřeba</th><th scope="col">Kč/km</th><th scope="col">Kč/měs.</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.v.name)}</td><td>${fN(Math.round(r.t.km))} km</td><td>${r.t.cons!=null?fN(r.t.cons,1)+" "+esc(unitOf(r.v)):"–"}</td><td>${r.t.perKm!=null?fN(r.t.perKm,2):"–"}</td><td>${r.m?kShort(r.t.cost/r.m):"–"}</td></tr>`).join("")}</tbody></table></div></section>`;
@@ -757,7 +829,7 @@ function renderStats(){
 $("statsView").addEventListener("click",e=>{
   const p=e.target.closest("[data-p]");if(p){period=p.dataset.p;selBucket=null;render();return}
   const m=e.target.closest("[data-m]");if(m){metric=m.dataset.m;selBucket=null;render();return}
-  if(e.target.id==="y-prev"||e.target.id==="y-next"){const ys=yearsWithData(makeCtx(selection(),entries)),i=ys.indexOf(year)+(e.target.id==="y-prev"?-1:1);if(ys[i]){year=ys[i];selBucket=null;render()}return}
+  if(e.target.id==="y-prev"||e.target.id==="y-next"){const ys=yearsWithData(ctxFor(selection())),i=ys.indexOf(year)+(e.target.id==="y-prev"?-1:1);if(ys[i]){year=ys[i];selBucket=null;render()}return}
   const h=e.target.closest("[data-i]");if(h){selBucket=+h.dataset.i;showBucket()}
 });
 
@@ -766,7 +838,7 @@ let chartState=null;
 function drawChart(c){
   const box=$("chart"),bk=bucketsFor(c),rows=bk.map(b=>({b,s:periodStats(c,b.a,b.b,groupOf)}));
   const unit=c.length===1?unitOf(c[0].v):"l";
-  const val=r=>metric==="cost"?r.s.cost:metric==="km"?r.s.km:metric==="perkm"?r.s.perKm:r.s.cons;
+  const val=r=>metric==="cost"?r.s.cost:metric==="km"?r.s.km:metric==="perkm"?r.s.perKm:metric==="kwh"?r.s.kwh:r.s.cons;
   chartState={rows,val,unit};
   const W=Math.max(280,box.clientWidth||640),H=Math.round(Math.min(280,Math.max(200,W*.42))),L=46,R=6,T=10,B=24,pw=W-L-R,ph=H-T-B,n=rows.length;
   const vals=rows.map(val).filter(v=>v!=null&&v>0);
@@ -797,14 +869,15 @@ function drawChart(c){
       if(metric==="cost"){
         let top=y(0);const parts=GROUPS.map(g=>[g,r.s.groups[g[0]]||0]).filter(p=>p[1]>0);
         parts.forEach(([g,a],j)=>{const h=a/(sc.hi-sc.lo)*ph,last=j===parts.length-1,hh=last?h:Math.max(h-2,.5);s+=seg(x,top-h,bw,hh,last,g[2]);top-=h});
-      }else{const h=y(0)-y(v);s+=seg(x,y(v),bw,h,true,"var(--s1)")}
+      }else{const h=y(0)-y(v);s+=seg(x,y(v),bw,h,true,metric==="kwh"?"var(--s6)":"var(--s1)")}
     });
   }
   box.innerHTML=s+"</svg>";
   $("legend").innerHTML=metric==="cost"?GROUPS.filter(g=>rows.some(r=>r.s.groups[g[0]])).map(g=>`<span><i style="background:${g[2]}"></i>${g[1]}</span>`).join(""):line?`<span>Čárkovaně průměr za období</span>`:"";
-  const fmt=r=>metric==="cost"?kc0(r.s.cost):metric==="km"?fN(Math.round(r.s.km))+" km":metric==="perkm"?(r.s.perKm!=null?fN(r.s.perKm,2)+" Kč/km":"–"):(r.s.cons!=null?fN(r.s.cons,1)+" "+per100(unit):"–");
+  const fmt=r=>metric==="cost"?kc0(r.s.cost):metric==="kwh"?fN(r.s.kwh,1)+" kWh":metric==="km"?fN(Math.round(r.s.km))+" km":metric==="perkm"?(r.s.perKm!=null?fN(r.s.perKm,2)+" Kč/km":"–"):(r.s.cons!=null?fN(r.s.cons,1)+" "+per100(unit):"–");
   chartState.fmt=fmt;
-  $("table").innerHTML=`<table><thead><tr><th scope="col">Období</th><th scope="col">Náklady</th><th scope="col">Najeto</th><th scope="col">Kč/km</th>${c.length===1?'<th scope="col">Spotřeba</th>':""}</tr></thead><tbody>${rows.filter(r=>r.s.count||r.s.km>0).map(r=>`<tr><td>${esc(r.b.long)}</td><td>${kc0(r.s.cost)}</td><td>${fN(Math.round(r.s.km))} km</td><td>${r.s.perKm!=null?fN(r.s.perKm,2):"–"}</td>${c.length===1?`<td>${r.s.cons!=null?fN(r.s.cons,1):"–"}</td>`:""}</tr>`).join("")}</tbody></table>`;
+  const anyKwh=rows.some(r=>r.s.kwh>0);
+  $("table").innerHTML=`<table><thead><tr><th scope="col">Období</th><th scope="col">Náklady</th><th scope="col">Najeto</th><th scope="col">Kč/km</th>${c.length===1?'<th scope="col">Spotřeba</th>':""}${anyKwh?'<th scope="col">kWh</th><th scope="col">kWh/100 km</th>':""}</tr></thead><tbody>${rows.filter(r=>r.s.count||r.s.km>0||r.s.chargeCount).map(r=>`<tr><td>${esc(r.b.long)}</td><td>${kc0(r.s.cost)}</td><td>${fN(Math.round(r.s.km))} km</td><td>${r.s.perKm!=null?fN(r.s.perKm,2):"–"}</td>${c.length===1?`<td>${r.s.cons!=null?fN(r.s.cons,1):"–"}</td>`:""}${anyKwh?`<td>${fN(r.s.kwh,1)}</td><td>${r.s.kwhPer100!=null?fN(r.s.kwhPer100,1):"–"}</td>`:""}</tr>`).join("")}</tbody></table>`;
   if(selBucket==null||!rows[selBucket]||val(rows[selBucket])==null){
     const nowK=period==="m"?todayIso.slice(0,7):todayIso.slice(0,4);let i=rows.findIndex(r=>r.b.k===nowK&&val(r));
     if(i<0){i=-1;rows.forEach((r,j)=>{if(val(r))i=j})}
@@ -819,13 +892,14 @@ function showBucket(){
   let body="";
   if(metric==="cost")body=GROUPS.filter(g=>r.s.groups[g[0]]).map(g=>`<div class="rr"><span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${g[2]};margin-right:6px"></i>${g[1]}</span><span>${kc0(r.s.groups[g[0]])}</span></div>`).join("");
   else if(metric==="perkm")body=`<div class="rr"><span>Náklady</span><span>${kc0(r.s.cost)}</span></div><div class="rr"><span>Najeto</span><span>${fN(Math.round(r.s.km))} km</span></div>`;
+  else if(metric==="kwh")body=`<div class="rr"><span>Spotřeba</span><span>${r.s.kwhPer100!=null?fN(r.s.kwhPer100,1)+" kWh/100 km":"–"}</span></div><div class="rr"><span>Náklady na nabíjení</span><span>${kc0(r.s.chargeCost)}</span></div>`;
   else if(metric==="cons"&&r.s.cons!=null)body=`<div class="rr"><span>Natankováno a ujeto</span><span>${fN(r.s.qty,1)} ${st.unit} na ${fN(r.s.dist)} km</span></div>`;
   el.innerHTML=`<div class="rh"><span>${esc(r.b.long)}</span><span>${st.fmt(r)}</span></div>${body}`;
 }
-if(window.ResizeObserver){let lastW=0;new ResizeObserver(es=>{const w=Math.round(es[0].contentRect.width);if(w!==lastW){lastW=w;if(view==="stats"&&chartState&&$("chart"))drawChart(makeCtx(selection(),entries))}}).observe(document.querySelector(".wrap"))}
+if(window.ResizeObserver){let lastW=0;new ResizeObserver(es=>{const w=Math.round(es[0].contentRect.width);if(w!==lastW){lastW=w;if(view==="stats"&&chartState&&$("chart"))drawChart(ctxFor(selection()))}}).observe(document.querySelector(".wrap"))}
 
 /* ---------- sheets ---------- */
-const SHEETS=["fsheet","rsheet","vsheet","esheet","bsheet"];
+const SHEETS=["fsheet","lsheet","rsheet","vsheet","esheet","bsheet"];
 const lock=on=>{document.body.style.overflow=on?"hidden":""};
 const closeTop=()=>{const o=SHEETS.find(id=>!$(id).hidden);if(!o)return;$(o).hidden=true;if(!SHEETS.some(id=>!$(id).hidden))lock(false)};
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeTop()});
@@ -845,7 +919,7 @@ function openVehicle(id){
   $("v-start").value=v&&v.startKm!==""?groupKmText(String(v.startKm)):"";$("v-since").value=v?v.since:"";$("v-price").value=v&&v.price!==""?v.price:"";$("v-note").value=v?v.note:"";
   vPhoto=v?photos[v.id]||null:null;vPhotoChanged=false;showPhoto();$("v-photo").value="";$("v-msg").hidden=true;
   $("v-extra").hidden=!v;
-  if(v){$("v-retire").hidden=!!v.retired;$("v-revive").hidden=!v.retired;$("v-del").hidden=entries.some(e=>e.vid===v.id)}
+  if(v){$("v-retire").hidden=!!v.retired;$("v-revive").hidden=!v.retired;$("v-del").hidden=entries.some(e=>e.vid===v.id);$("v-link").hidden=!["hybrid","elektro"].includes(v.fuel)}
   $("vsheet").hidden=false;lock(true);$("vsheet").querySelector(".panel").scrollTop=0;
 }
 /* photos are downscaled before saving so they stay small in the backup */
@@ -1054,11 +1128,98 @@ $("eform").onsubmit=async ev=>{
   if(await persist()){
     eRemoved.forEach(id=>Store.del(fkey(id)));
     closeTop();render();
-    const c=makeCtx([vById(vid)],entries)[0],last=rec.kind==="fuel"&&!editE?c.segs.find(s=>s.date===date&&entries.some(e=>e.id===s.id&&e.km===rec.km)):null;
+    const c=ctxFor([vById(vid)])[0],last=rec.kind==="fuel"&&!editE?c.segs.find(s=>s.date===date&&entries.some(e=>e.id===s.id&&e.km===rec.km)):null;
     toast(last?`Uloženo · ${fN(last.val,1)} ${per100(unitOf(vById(vid)))}`:"Uloženo");
   }
 };
 $("e-del").onclick=async()=>{const b=$("e-del");if(!armed(b,"Smazat","Klepni znovu"))return;const e=entries.find(x=>x.id===editE);entries=entries.filter(x=>x!==e);if(await persist()){closeTop();render();toast("Záznam smazán",async()=>{entries.push(e);await persist();render()});setTimeout(()=>{if(!entries.includes(e))(e.files||[]).forEach(f=>Store.del(fkey(f.id)))},7000)}};
+
+/* ---------- charging data from the electricity app: read only ---------- */
+const LKEY="automobil-link";
+let auth=null,loadingCharges=false,chargeError="";
+async function tfetch(url,opts){
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),20000);
+  try{return await fetch(url,{...opts,signal:ctl.signal})}
+  catch(e){throw new Error(e&&e.name==="AbortError"?"Firebase neodpovídá. Zkus to znovu.":"Nepovedlo se spojit s Firebase. Zkontroluj internet a adresu databáze.")}
+  finally{clearTimeout(t)}
+}
+function authMessage(code){
+  const c=String(code||"");
+  if(/INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND/.test(c))return "E-mail nebo heslo není správné.";
+  if(/TOO_MANY_ATTEMPTS/.test(c))return "Moc pokusů o přihlášení. Zkus to za chvíli.";
+  if(/USER_DISABLED/.test(c))return "Tento účet je ve Firebase vypnutý.";
+  if(/referer|referrer/i.test(c))return "Klíč API nepovoluje tuhle adresu. V Google Cloud u klíče povol davve7.github.io/*.";
+  if(/API.?KEY|API key/i.test(c))return "Web API klíč není správný.";
+  return `Přihlášení se nepovedlo (${c||"neznámá chyba"}).`;
+}
+async function idToken(){
+  const res=await tfetch(`https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(auth.apiKey)}`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`grant_type=refresh_token&refresh_token=${encodeURIComponent(auth.refresh)}`});
+  const j=await res.json().catch(()=>null);
+  if(!res.ok||!j||!j.id_token)throw new Error("Přihlášení vypršelo. Odpoj a přihlas se znovu.");
+  if(j.refresh_token&&j.refresh_token!==auth.refresh){auth.refresh=j.refresh_token;await Store.set(LKEY,auth)}
+  return j.id_token;
+}
+async function loadCharges(){
+  if(!auth||loadingCharges)return false;
+  loadingCharges=true;chargeError="";renderLink();
+  try{
+    const tok=await idToken();
+    const res=await tfetch(`${auth.url}/users/${encodeURIComponent(auth.uid)}/chargeReadings.json?auth=${encodeURIComponent(tok)}`,{cache:"no-store"});
+    if(res.status===401||res.status===403)throw new Error("Přístup zamítnut. Zkontroluj účet a pravidla Firebase.");
+    if(!res.ok)throw new Error(`Nabíjení nejde načíst (chyba ${res.status}).`);
+    const list=cleanCharges(await res.json());
+    if(list.length)charges=list;else chargeError="Ve Firebase zatím žádné nabíjení není. Otevři Sledování elektřiny a počkej na synchronizaci.";
+    meta.chargesAt=Date.now();await persist();render();
+    return true;
+  }catch(e){chargeError=e.message||"Načtení se nepovedlo.";return false}
+  finally{loadingCharges=false;renderLink()}
+}
+function defaultFrom(v){const d=entries.filter(e=>e.vid===v.id).map(e=>e.date).sort()[0];return v.since||d||""}
+function renderLink(){
+  if($("lsheet").hidden)return;
+  $("l-off").hidden=!!auth;$("l-out").hidden=!auth;
+  $("l-go").textContent=loadingCharges?"Načítám…":auth?"Načíst teď":"Přihlásit a načíst";$("l-go").disabled=loadingCharges;
+  const a=assigned(),sum=a.reduce((m,x)=>({k:m.k+x.kwh,c:m.c+x.total}),{k:0,c:0}),info=$("l-info");
+  info.hidden=!auth;
+  if(auth){const when=meta.chargesAt?new Date(meta.chargesAt).toLocaleString("cs-CZ",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"zatím ne";
+    info.textContent=`Načteno ${charges.length} nabití. Počítá se ${a.length}: ${fN(sum.k,1)} kWh za ${kc0(sum.c)}. Poslední načtení ${when}.`}
+  $("l-msg").hidden=!chargeError;$("l-msg").textContent=chargeError;
+}
+function openLink(){
+  if(sample||!vehicles.length){toast("Nejdřív přidej své vozidlo.");return}
+  const pick=(chargeLink&&vById(chargeLink.vid))||vehicles.find(v=>v.fuel==="hybrid"&&!v.retired)||vehicles.find(v=>v.fuel==="elektro"&&!v.retired)||activeV()[0]||vehicles[0];
+  $("l-veh").innerHTML=vehicles.map(v=>`<option value="${esc(v.id)}">${esc(v.name)}${v.plate?" · "+esc(v.plate):""}</option>`).join("");
+  $("l-veh").value=pick.id;$("l-from").value=chargeLink?chargeLink.from:defaultFrom(pick);
+  $("l-pass").value="";chargeError="";$("lsheet").hidden=false;lock(true);renderLink();
+}
+async function saveLink(){chargeLink={vid:$("l-veh").value,from:isDate($("l-from").value)?$("l-from").value:""};await persist();render();renderLink()}
+$("b-link").onclick=openLink;$("v-link").onclick=openLink;
+$("l-veh").onchange=()=>{if(!chargeLink)$("l-from").value=defaultFrom(vById($("l-veh").value));if(auth)saveLink()};
+$("l-from").onchange=()=>{if(auth)saveLink()};
+$("l-close").onclick=closeTop;
+$("lform").addEventListener("input",()=>{chargeError="";$("l-msg").hidden=true});
+$("lform").onsubmit=async e=>{
+  e.preventDefault();if(loadingCharges)return;
+  if(auth){await saveLink();if(await loadCharges()&&!chargeError)toast("Nabíjení je načtené");return}
+  const url=$("l-url").value.trim().replace(/\/+$/,""),key=$("l-key").value.trim(),email=$("l-email").value.trim(),pass=$("l-pass").value;
+  const fail=t=>{chargeError=t;renderLink()};
+  if(!/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.(firebasedatabase\.app|firebaseio\.com)$/i.test(url))return fail("Zkontroluj adresu databáze. Začíná https:// a končí firebasedatabase.app.");
+  if(!/^AIza[\w-]{20,}$/.test(key))return fail("Zkontroluj Web API klíč. Začíná AIza.");
+  if(!email||!pass)return fail("Doplň e-mail a heslo.");
+  loadingCharges=true;chargeError="";renderLink();
+  try{
+    const res=await tfetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(key)}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password:pass,returnSecureToken:true})});
+    const j=await res.json().catch(()=>null);
+    if(!res.ok||!j||!j.refreshToken||!j.localId)throw new Error(authMessage(j&&j.error&&j.error.message));
+    auth={url,apiKey:key,refresh:j.refreshToken,uid:j.localId,email};
+    if(!await Store.set(LKEY,auth))throw new Error("Přihlášení se nepovedlo uložit.");
+    $("l-pass").value="";
+    loadingCharges=false;await saveLink();
+    if(await loadCharges()&&!chargeError)toast("Nabíjení je načtené");
+  }catch(err){auth=null;chargeError=err.message}
+  finally{loadingCharges=false;$("l-pass").value="";renderLink()}
+};
+$("l-out").onclick=async()=>{const b=$("l-out");if(!armed(b,"Odpojit","Klepni znovu"))return;auth=null;await Store.del(LKEY);chargeError="";renderLink();toast("Odpojeno. Načtené nabíjení zůstalo v aplikaci.")};
 
 /* ---------- top-level actions ---------- */
 function saveView(){try{localStorage.setItem("automobil-view",view)}catch(e){}}
@@ -1081,7 +1242,7 @@ async function saveFile(name,type,content){
 async function backupJson(){
   const files={};
   for(const e of entries)for(const f of e.files||[]){const d=await Store.get(fkey(f.id));if(d)files[f.id]=d}
-  return JSON.stringify({app:"automobil",version:2,saved:todayIso,vehicles:vehicles.map(({unit,...v})=>v),entries,photos,files});
+  return JSON.stringify({app:"automobil",version:3,saved:todayIso,vehicles:vehicles.map(({unit,...v})=>v),entries,photos,files,charges,chargeLink});
 }
 let pending=null;
 $("backup").onclick=()=>{
@@ -1104,7 +1265,7 @@ function readBackup(txt){
   try{
     const d=JSON.parse(txt);if(d.app!=="automobil")throw 0;
     const s=sanitize(d);const fileIds=new Set(s.entries.flatMap(e=>(e.files||[]).map(f=>f.id)));
-    pending={...s,photos:d.photos&&typeof d.photos==="object"?Object.fromEntries(Object.entries(d.photos).filter(([k,v])=>s.vehicles.some(x=>x.id===k)&&typeof v==="string"&&v.startsWith("data:image/"))):{},
+    pending={...s,charges:cleanCharges(d.charges),chargeLink:cleanLink(d.chargeLink),photos:d.photos&&typeof d.photos==="object"?Object.fromEntries(Object.entries(d.photos).filter(([k,v])=>s.vehicles.some(x=>x.id===k)&&typeof v==="string"&&v.startsWith("data:image/"))):{},
       files:d.files&&typeof d.files==="object"?Object.fromEntries(Object.entries(d.files).filter(([k,v])=>fileIds.has(k)&&v&&typeof v.data==="string"&&FILE_TYPES.includes(v.type)&&v.data.startsWith(`data:${v.type};base64,`))):{}};
     $("b-info").textContent=`Záloha z ${isDate(d.saved)?fmtD(d.saved):"neznámého data"}: ${s.vehicles.length} ${pl(s.vehicles.length,"vozidlo","vozidla","vozidel")}, ${s.entries.length} ${pl(s.entries.length,"záznam","záznamy","záznamů")}. Nahradí všechno, co je teď v aplikaci.`;
     $("b-info").hidden=false;$("b-apply").hidden=false;
@@ -1114,30 +1275,33 @@ $("b-file").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new File
 $("b-read").onclick=()=>readBackup($("b-text").value.trim());
 $("b-apply").onclick=async()=>{
   const b=$("b-apply");if(!pending||!armed(b,"Nahradit data zálohou","Klepni znovu, data se přepíšou"))return;
-  const prev={vehicles,entries,photos,sample};
-  vehicles=pending.vehicles;entries=pending.entries;photos=pending.photos;sample=false;vsel="all";
+  const prev={vehicles,entries,photos,sample,charges,chargeLink};
+  vehicles=pending.vehicles;entries=pending.entries;photos=pending.photos;charges=pending.charges;chargeLink=pending.chargeLink;sample=false;vsel="all";
   await Store.set(PKEY,photos);
   for(const [id,f] of Object.entries(pending.files)){if(!await Store.set(fkey(id),f)){toast("Část příloh se nevešla do úložiště.");break}}
-  if(await persist()){closeTop();render();toast("Data jsou obnovená",prev.sample?undefined:async()=>{({vehicles,entries,photos}=prev);await Store.set(PKEY,photos);await persist();render()})}
+  if(await persist()){closeTop();render();toast("Data jsou obnovená",prev.sample?undefined:async()=>{({vehicles,entries,photos,charges,chargeLink}=prev);await Store.set(PKEY,photos);await persist();render()})}
 };
 $("b-csv").onclick=()=>{
   const q=s=>`"${String(s??"").replace(/"/g,'""')}"`,dec=n=>n===""||n==null?"":String(n).replace(".",",");
-  const segs={};makeCtx(vehicles,entries).forEach(c=>c.segs.forEach(s=>segs[s.id]=s));
+  const segs={};ctxFor(vehicles).forEach(c=>c.segs.forEach(s=>segs[s.id]=s));
   const rows=[["Datum","Vozidlo","SPZ","Druh","Kategorie","Popis","Stav km","Množství","Jednotka","Cena za jednotku","Částka Kč","Plná nádrž","Spotřeba na 100 km","Poznámka","Přílohy"]];
   [...entries].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{const v=vById(e.vid),f=e.kind==="fuel";
     rows.push([e.date,v.name,v.plate,f?"Tankování":"Náklad",f?"Palivo":catName(e.cat),f?e.station:e.what,e.km||"",f?dec(e.qty):"",f?unitOf(v):"",f&&e.qty?dec((e.total/e.qty).toFixed(2)):"",dec(f?e.total:e.amount),f?(e.full?"ano":"ne"):"",segs[e.id]?dec(segs[e.id].val.toFixed(2)):"",e.note,(e.files||[]).map(x=>x.name).join(", ")])});
+  assigned().forEach(x=>{const v=vById(x.vid);rows.push([x.date,v.name,v.plate,"Nabíjení","Nabíjení","Sledování elektřiny","",dec(x.kwh),"kWh",dec(x.price),dec(x.total.toFixed(2)),"","","",""])});
+  rows.splice(1,rows.length,...rows.slice(1).sort((a,b)=>a[0].localeCompare(b[0])));
   saveFile(`automobil-zaznamy-${todayIso}.csv`,"text/csv","﻿"+rows.map(r=>r.map(q).join(";")).join("\r\n"));
 };
 
 /* ---------- start ---------- */
-document.addEventListener("visibilitychange",()=>{if(!document.hidden){const b=todayIso;setToday();if(b!==todayIso)render()}});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){const b=todayIso;setToday();if(b!==todayIso)render();if(auth&&!sample&&Date.now()-(meta.chargesAt||0)>9e5)loadCharges()}});
 (async()=>{
   const d=await Store.get(KEY);
   if(d&&Array.isArray(d.vehicles)&&d.vehicles.length){
-    const s=sanitize(d);vehicles=s.vehicles;entries=s.entries;meta={lastBackup:d.meta&&isDate(d.meta.lastBackup)?d.meta.lastBackup:null};
+    const s=sanitize(d);vehicles=s.vehicles;entries=s.entries;meta={lastBackup:d.meta&&isDate(d.meta.lastBackup)?d.meta.lastBackup:null,chargesAt:d.meta&&+d.meta.chargesAt||0};charges=cleanCharges(d.charges);chargeLink=cleanLink(d.chargeLink);
     photos=(await Store.get(PKEY))||{};
   }else{const s=buildSample();vehicles=s.vehicles;entries=s.entries;sample=true}
   render();
+  const a=await Store.get(LKEY);if(a&&a.refresh){auth=a;if(!sample)loadCharges()}
 })();
 </script>
 <script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script>
