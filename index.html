@@ -411,6 +411,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
     <button class="btn" id="b-link" type="button">Nabíjení ze Sledování elektřiny</button>
     <h4>Export</h4>
     <button class="btn" id="b-csv" type="button">Záznamy do Excelu</button>
+    <h4>Widget na ploše</h4>
+    <button class="btn" id="b-widget" type="button">Uložit přehled pro widget</button>
+    <p class="muted" style="font-size:.85rem;margin:0">V nabídce zvol <b>Uložit do Souborů → iCloud Drive → Scriptable</b>. Když se zeptá na stejný soubor, zvol <b>Nahradit</b>.</p>
     <button class="btn" id="b-close" type="button">Zavřít</button>
   </div>
 </div>
@@ -1239,6 +1242,18 @@ async function saveFile(name,type,content){
   try{const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);return "download"}
   catch(e){toast("Soubor se nepodařilo uložit. Použij zálohu přes schránku.");return "fail"}
 }
+/* ---------- overview for the home-screen widget (Scriptable reads prehled-*.json) ---------- */
+function widgetJson(){
+  const m=todayIso.slice(0,7),y=+m.slice(0,4),mo=+m.slice(5,7),a=m+"-01",b=lastOfMonth(y,mo),mn=MONTHS[mo-1];
+  const udaje=ctxFor(vehicles.filter(v=>!v.retired)).map(c=>{
+    const s=periodStats([c],"0000-01-01","9999-12-31",groupOf),sm=periodStats([c],a,b,groupOf),parts=[];
+    if(s.cons!=null)parts.push(`${fN(s.cons,1)} ${per100(unitOf(c.v)).replace(" km","")}`);
+    else if(s.kwhPer100!=null)parts.push(`${fN(s.kwhPer100,1)} kWh/100`);
+    parts.push(`${mn} ${kc0(sm.cost)}`);
+    return {popis:c.v.name,hodnota:parts.join(" · ")};
+  });
+  return JSON.stringify({prehled:1,app:"automobil",nazev:"Automobil",ulozeno:new Date().toISOString(),mesic:m,polozky:[],udaje},null,1);
+}
 async function backupJson(){
   const files={};
   for(const e of entries)for(const f of e.files||[]){const d=await Store.get(fkey(f.id));if(d)files[f.id]=d}
@@ -1280,6 +1295,11 @@ $("b-apply").onclick=async()=>{
   await Store.set(PKEY,photos);
   for(const [id,f] of Object.entries(pending.files)){if(!await Store.set(fkey(id),f)){toast("Část příloh se nevešla do úložiště.");break}}
   if(await persist()){closeTop();render();toast("Data jsou obnovená",prev.sample?undefined:async()=>{({vehicles,entries,photos,charges,chargeLink}=prev);await Store.set(PKEY,photos);await persist();render()})}
+};
+$("b-widget").onclick=async()=>{
+  if(sample){toast("Teď vidíš ukázková data. Nejdřív přidej vlastní vozidlo.");return}
+  const r=await saveFile("prehled-automobil.json","application/json",widgetJson());
+  if(r==="shared"||r==="download")toast("Přehled pro widget je uložený.");
 };
 $("b-csv").onclick=()=>{
   const q=s=>`"${String(s??"").replace(/"/g,'""')}"`,dec=n=>n===""||n==null?"":String(n).replace(".",",");
